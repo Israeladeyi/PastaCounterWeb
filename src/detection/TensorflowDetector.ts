@@ -21,7 +21,8 @@ export class TensorflowDetector {
     if (this.model) return;
     try {
       await tf.ready();
-      this.model = await cocoSsd.load({ base: 'mobilenet_v2' });
+      // Load from the local public/model directory to avoid network fetching issues
+      this.model = await cocoSsd.load({ base: 'mobilenet_v2', modelUrl: '/model/model.json' });
       this.isReady = true;
       console.log('TensorFlow COCO-SSD loaded successfully!');
     } catch (err) {

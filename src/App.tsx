@@ -20,30 +20,35 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="app-container">
-        <nav className="top-nav">
-          <NavLink to="/" className="nav-brand gradient-text">
-            <Activity size={28} color="#3b82f6" />
-            PastaCounter
-          </NavLink>
-          
-          <div className="nav-links">
-            <NavLink to="/" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
-              <LayoutDashboard size={20} /> Dashboard
-            </NavLink>
-            <NavLink to="/live" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Activity size={20} /> Live Counting
-            </NavLink>
-            <NavLink to="/settings" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
-              <SettingsIcon size={20} /> Settings
-            </NavLink>
+        <div className="sidebar">
+          <div className="sidebar-header">
+            <Activity color="var(--primary)" size={28} />
+            <h1>PastaCounter</h1>
           </div>
-        </nav>
+          <nav className="nav-links">
+            <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <Activity size={24} />
+              <span>Live Count</span>
+            </NavLink>
+            <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <LayoutDashboard size={24} />
+              <span>Dashboard</span>
+            </NavLink>
+            <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <SettingsIcon size={24} />
+              <span>Settings</span>
+            </NavLink>
+          </nav>
+        </div>
 
-        <Routes>
-          <Route path="/" element={<DashboardScreen />} />
-          <Route path="/live" element={<LiveCountingScreen />} />
-          <Route path="/settings" element={<SettingsScreen />} />
-        </Routes>
+        <div className="main-content">
+          <Routes>
+            <Route path="/" element={<LiveCountingScreen />} />
+            <Route path="/dashboard" element={<DashboardScreen />} />
+            <Route path="/live" element={<LiveCountingScreen />} />
+            <Route path="/settings" element={<SettingsScreen />} />
+          </Routes>
+        </div>
       </div>
     </BrowserRouter>
   );

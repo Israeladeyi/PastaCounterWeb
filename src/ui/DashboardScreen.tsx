@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Activity, Clock, Target, History } from 'lucide-react';
+import { Activity, Clock, Target, History, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SessionRepository } from '../database/SessionRepository';
 import { SessionRecord } from '../database/Database';
@@ -17,50 +17,56 @@ export default function DashboardScreen() {
     : 0;
 
   return (
-    <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-      <h1 className="display-font gradient-text" style={{ fontSize: '2.5rem', marginBottom: 32 }}>
-        Welcome to PastaCounter
-      </h1>
+    <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+      <h1 className="page-title">Dashboard</h1>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 24, marginBottom: 40 }}>
-        <div className="glass-panel" style={{ padding: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <Target color="var(--primary)" size={24} />
-            <h3 className="stat-label">Total Sachets Counted</h3>
+      <div className="bento-grid">
+        <div className="glass-card stat-card">
+          <div className="stat-icon">
+            <Target size={28} />
           </div>
-          <div className="stat-value" style={{ fontSize: '2.5rem' }}>{totalPastaCounted}</div>
+          <div>
+            <div className="stat-value">{totalPastaCounted}</div>
+            <div className="stat-label">Total Counted</div>
+          </div>
         </div>
         
-        <div className="glass-panel" style={{ padding: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <Activity color="var(--success)" size={24} />
-            <h3 className="stat-label">Average Confidence</h3>
+        <div className="glass-card stat-card">
+          <div className="stat-icon" style={{ color: 'var(--success)' }}>
+            <Activity size={28} />
           </div>
-          <div className="stat-value" style={{ fontSize: '2.5rem' }}>{(avgConfidence * 100).toFixed(1)}%</div>
+          <div>
+            <div className="stat-value">{(avgConfidence * 100).toFixed(1)}%</div>
+            <div className="stat-label">Avg Confidence</div>
+          </div>
         </div>
 
-        <div className="glass-panel" style={{ padding: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <Clock color="var(--secondary)" size={24} />
-            <h3 className="stat-label">Total Sessions</h3>
+        <div className="glass-card stat-card">
+          <div className="stat-icon" style={{ color: '#f59e0b' }}>
+            <Clock size={28} />
           </div>
-          <div className="stat-value" style={{ fontSize: '2.5rem' }}>{sessions.length}</div>
+          <div>
+            <div className="stat-value">{sessions.length}</div>
+            <div className="stat-label">Total Sessions</div>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 32 }}>
+      <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
         {/* Quick Actions */}
-        <div style={{ flex: 1 }}>
-          <h2 className="display-font" style={{ marginBottom: 20 }}>Quick Actions</h2>
-          <div className="glass-panel" style={{ padding: 32, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ width: 64, height: 64, background: 'var(--bg-glass)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-              <Activity size={32} color="var(--primary)" />
+        <div style={{ flex: '1 1 300px' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: 20, fontWeight: 600 }}>Quick Actions</h2>
+          <div className="glass-card" style={{ textAlign: 'center', padding: '40px 24px' }}>
+            <div style={{ width: 80, height: 80, background: 'rgba(59, 130, 246, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+              <Play size={40} color="var(--primary)" style={{ marginLeft: 6 }} />
             </div>
-            <h3 style={{ fontSize: '1.25rem' }}>Start New Session</h3>
-            <p style={{ color: 'var(--text-muted)' }}>Launch the camera interface to begin counting pasta sachets on the conveyor belt.</p>
-            <Link to="/live" style={{ textDecoration: 'none' }}>
-              <button className="btn btn-primary" style={{ width: '100%', marginTop: 16 }}>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: 8 }}>Start New Session</h3>
+            <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9rem' }}>
+              Launch the live camera interface to begin counting pasta sachets on the conveyor.
+            </p>
+            <Link to="/" style={{ textDecoration: 'none' }}>
+              <button className="fab-btn btn-success" style={{ width: '100%', padding: '16px', fontSize: '1rem', justifyContent: 'center' }}>
                 Open Camera Interface
               </button>
             </Link>
@@ -68,25 +74,39 @@ export default function DashboardScreen() {
         </div>
 
         {/* Recent History */}
-        <div style={{ flex: 2 }}>
-          <h2 className="display-font" style={{ marginBottom: 20 }}>Recent Sessions</h2>
-          <div className="glass-panel" style={{ padding: 24 }}>
+        <div style={{ flex: '2 1 400px' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: 20, fontWeight: 600 }}>Recent Sessions</h2>
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
             {sessions.length === 0 ? (
-              <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>
-                <History size={48} opacity={0.5} style={{ margin: '0 auto 16px' }} />
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '60px 0' }}>
+                <History size={48} opacity={0.3} style={{ margin: '0 auto 16px' }} />
                 <p>No sessions recorded yet.</p>
               </div>
             ) : (
-              <div className="session-list">
-                {sessions.slice(0, 5).map(s => (
-                  <div key={s.id} className="session-item">
+              <div>
+                {sessions.slice(0, 5).map((s, idx) => (
+                  <div key={s.id} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '20px 24px',
+                    borderBottom: idx !== Math.min(sessions.length, 5) - 1 ? '1px solid var(--border)' : 'none'
+                  }}>
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: 4 }}>Session {new Date(s.start_time).toLocaleDateString()}</div>
-                      <div className="stat-label">Duration: {(s.duration_ms / 1000).toFixed(1)}s</div>
+                      <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>
+                        Session {new Date(s.start_time).toLocaleDateString()}
+                      </div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                        Duration: {(s.duration_ms / 1000).toFixed(1)}s
+                      </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>{s.total_count}</div>
-                      <div className="stat-label">Sachets</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>
+                        {s.total_count}
+                      </div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Sachets
+                      </div>
                     </div>
                   </div>
                 ))}

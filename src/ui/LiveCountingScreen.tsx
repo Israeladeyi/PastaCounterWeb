@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, Square, RefreshCw } from 'lucide-react';
+import { Play, Square, RefreshCw, Activity, Clock, Target } from 'lucide-react';
 import { Pipeline } from '../pipeline/Pipeline';
 import { useConfigStore } from '../store/configStore';
 
@@ -162,7 +162,9 @@ export default function LiveCountingScreen() {
 
   return (
     <div className="live-container">
-      {/* Video / Canvas Area */}
+      <h1 className="page-title" style={{ marginBottom: 0 }}>Live Scanner</h1>
+      
+      {/* Video Area */}
       <div className="video-wrapper">
         <video 
           ref={videoRef} 
@@ -173,83 +175,100 @@ export default function LiveCountingScreen() {
         />
         <canvas 
           ref={canvasRef} 
-          className="canvas-overlay"
+          className="overlay-canvas"
         />
-        {/* Hidden canvas for pixel extraction */}
         <canvas ref={extractionCanvasRef} style={{ display: 'none' }} />
         
+        {/* Top Left Stats Overlay */}
+        <div className="live-stats-overlay">
+          {isCounting && (
+            <div className="glass-pill" style={{ color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+              <div className="recording-indicator" />
+              <span>RECORDING</span>
+            </div>
+          )}
+          <div className="glass-pill pill-huge">
+            {count}
+            <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-muted)' }}>PCS</span>
+          </div>
+          <div className="glass-pill" style={{ fontSize: '1.25rem' }}>
+            <Clock size={20} color="var(--primary)" />
+            {formatTime(timeRemaining || session.durationMs)}
+          </div>
+        </div>
+
+        {/* Top Right Warning Overlay */}
         {activeWarning && (
           <div style={{
             position: 'absolute',
-            top: 16,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'var(--danger)',
+            top: 24,
+            right: 24,
+            background: 'var(--danger)',
             color: 'white',
-            padding: '8px 16px',
-            borderRadius: 8,
-            fontWeight: 'bold',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-            zIndex: 10,
-            animation: 'pulse 2s infinite'
+            padding: '12px 24px',
+            borderRadius: 12,
+            fontWeight: 700,
+            boxShadow: '0 8px 32px var(--danger-glow)',
+            animation: 'tooltip-pulse 2s infinite',
+            transformOrigin: 'center'
           }}>
             ⚠️ {activeWarning}
           </div>
         )}
 
-        {isCounting && (
-          <div style={{ position: 'absolute', top: 20, right: 20, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: 20 }}>
-            <div className="recording-indicator" />
-            <span style={{ fontSize: 14, fontWeight: 600 }}>LIVE</span>
+        {/* Bottom Right Metrics Overlay */}
+        <div style={{
+          position: 'absolute',
+          bottom: 24,
+          right: 24,
+          display: 'flex',
+          gap: 12
+        }}>
+          <div className="glass-pill">
+            <Target size={18} color="var(--success)" />
+            <span>{(confidence * 100).toFixed(1)}%</span>
           </div>
+          <div className="glass-pill">
+            <Activity size={18} color="#f59e0b" />
+            <span>{pipelineRef.current.getSessionManager().getSnapshot().ratePerMin.toFixed(0)} /min</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Action Button */}
+      <div className="fab-container">
+        {!isCounting ? (
+          <button className="fab-btn btn-success" onClick={() => setIsCounting(true)}>
+            <Play fill="currentColor" size={24} /> START COUNTING
+          </button>
+        ) : (
+          <button className="fab-btn btn-danger" onClick={() => setIsCounting(false)}>
+            <Square fill="currentColor" size={24} /> STOP
+          </button>
         )}
       </div>
 
-      {/* Control Panel */}
-      <div className="glass-panel data-panel">
-        <div className="count-display">
-          <h2 className="display-font gradient-text">TOTAL COUNT</h2>
-          <div className="count-number">{count}</div>
-        </div>
-
-        <div style={{ padding: '0 20px' }}>
-          <div className="stat-grid">
-            <div className="stat-card">
-              <div className="stat-label">Confidence</div>
-              <div className="stat-value" style={{ color: confidence > 0.8 ? 'var(--success)' : 'var(--accent)' }}>
-                {(confidence * 100).toFixed(1)}%
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">Rate (ppm)</div>
-              <div className="stat-value">{pipelineRef.current.getSessionManager().getSnapshot().ratePerMin.toFixed(1)}</div>
-            </div>
-            <div className="stat-card" style={{ gridColumn: 'span 2' }}>
-              <div className="stat-label">Time Remaining</div>
-              <div className="stat-value" style={{ fontFamily: 'monospace', fontSize: '2rem', textAlign: 'center' }}>
-                {formatTime(timeRemaining || session.durationMs)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="controls-card">
-          {!isCounting ? (
-            <button className="btn btn-primary" style={{ width: '100%', padding: '16px' }} onClick={() => setIsCounting(true)}>
-              <Play size={20} /> START SESSION
-            </button>
-          ) : (
-            <button className="btn btn-danger" style={{ width: '100%', padding: '16px' }} onClick={() => setIsCounting(false)}>
-              <Square size={20} /> STOP SESSION
-            </button>
-          )}
-
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn glass-panel" style={{ flex: 1 }} onClick={() => { pipelineRef.current.reset(); setCount(0); }}>
-              <RefreshCw size={18} /> Reset
-            </button>
-          </div>
-        </div>
+      <div style={{ textAlign: 'center' }}>
+        <button 
+          onClick={() => { pipelineRef.current.reset(); setCount(0); }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--text-muted)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            cursor: 'pointer',
+            padding: '8px 16px',
+            borderRadius: 8,
+            transition: 'background 0.2s',
+            fontWeight: 500
+          }}
+          onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+          onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+        >
+          <RefreshCw size={16} /> Reset Counter
+        </button>
       </div>
     </div>
   );

@@ -1,8 +1,7 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { Activity, LayoutDashboard, Settings as SettingsIcon } from 'lucide-react';
 import { Database } from './database/Database';
-import { useConfigStore } from './store/configStore';
 
 // Screens
 import LiveCountingScreen from './ui/LiveCountingScreen';
@@ -10,7 +9,6 @@ import DashboardScreen from './ui/DashboardScreen';
 import SettingsScreen from './ui/SettingsScreen';
 
 export default function App() {
-  const initStore = useConfigStore();
 
   useEffect(() => {
     // Initialize Database

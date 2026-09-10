@@ -5,7 +5,7 @@ import {create} from 'zustand';
 import {SessionState, SessionSnapshot} from '../session/SessionManager';
 import {SystemHealth} from '../confidence/ConfidenceEngine';
 import {Track} from '../tracking/Track';
-import {PipelineDiagnostics} from '../pipeline/Pipeline';
+
 import {CountEvent} from '../counting/CountingEngine';
 
 interface SessionStore {
@@ -21,7 +21,7 @@ interface SessionStore {
   health: SystemHealth | null;
 
   // Diagnostics
-  diagnostics: PipelineDiagnostics | null;
+  diagnostics: any | null;
 
   // Countdown
   countdownValue: number;
@@ -31,7 +31,7 @@ interface SessionStore {
   setSnapshot: (snapshot: SessionSnapshot) => void;
   setActiveTracks: (tracks: Track[]) => void;
   setHealth: (health: SystemHealth) => void;
-  setDiagnostics: (diag: PipelineDiagnostics) => void;
+  setDiagnostics: (diag: any) => void;
   setCountdownValue: (val: number) => void;
   setLatestCountEvent: (event: CountEvent) => void;
   reset: () => void;

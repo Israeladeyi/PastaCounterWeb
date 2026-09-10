@@ -20,7 +20,6 @@
  * Mitigation: Size filter rejects blobs too large (hand) or too small (noise).
  */
 
-import {BoundingBox} from '../utils/geometry';
 import {ObjectDetector, RawDetection, DetectorMetadata} from './ObjectDetector';
 import {Logger} from '../utils/logger';
 
@@ -138,7 +137,6 @@ export class MotionDetector implements ObjectDetector {
     this._updateBackground(grey, cleaned);
 
     // Convert blobs to RawDetection
-    const totalArea = frameWidth * frameHeight;
     const detections: RawDetection[] = [];
 
     for (const blob of blobs) {

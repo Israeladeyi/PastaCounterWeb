@@ -22,7 +22,7 @@ import {Track, TrackState} from '../tracking/Track';
 import {CountingLine} from './CountingLine';
 import {DuplicateGuard} from './DuplicateGuard';
 import {trackStateMachine} from './StateMachine';
-import {Point, bboxCenter} from '../utils/geometry';
+import {Point} from '../utils/geometry';
 import {Logger} from '../utils/logger';
 
 const TAG = 'CountingEngine';

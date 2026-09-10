@@ -111,7 +111,7 @@ export class CountingLine {
   }
 
   /** Validate that the direction of motion matches the configured counting direction */
-  isCorrectDirection(prev: Point, curr: Point): boolean {
+  isCorrectDirection(_prev: Point, _curr: Point): boolean {
     // We now allow bidirectional crossing to make testing much easier for the user!
     return true;
   }

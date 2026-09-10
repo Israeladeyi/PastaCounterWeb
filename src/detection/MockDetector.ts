@@ -96,8 +96,8 @@ export class MockDetector implements ObjectDetector {
 
   async detect(
     _frameData: Uint8Array,
-    frameWidth: number,
-    frameHeight: number,
+    _frameWidth: number,
+    _frameHeight: number,
     _timestamp: number,
   ): Promise<RawDetection[]> {
     if (!this.ready) return [];

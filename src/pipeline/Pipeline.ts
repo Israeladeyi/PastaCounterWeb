@@ -33,7 +33,7 @@ export class Pipeline {
   private confidenceEngine: ConfidenceEngine;
 
   private isProcessing = false;
-  private lastFrameTime = 0;
+
 
   constructor() {
     this.detector = new MotionDetector();
@@ -66,9 +66,6 @@ export class Pipeline {
     this.isProcessing = true;
 
     try {
-      const dt = this.lastFrameTime === 0 ? 33 : frame.timestamp - this.lastFrameTime;
-      this.lastFrameTime = frame.timestamp;
-
       // 1. Detection (Motion Subtraction)
       const detections = await this.detector.detect(frame.data as unknown as Uint8Array, frame.width, frame.height, frame.timestamp);
 

@@ -16,7 +16,7 @@
  *  - Repeat for remaining boxes
  */
 
-import {BoundingBox, bboxArea, computeIoU} from '../utils/geometry';
+import {bboxArea, computeIoU} from '../utils/geometry';
 import {RawDetection} from './ObjectDetector';
 
 // ---------------------------------------------------------------------------

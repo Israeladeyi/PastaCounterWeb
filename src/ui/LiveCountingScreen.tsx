@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Play, Square, Settings, RefreshCw } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Play, Square, RefreshCw } from 'lucide-react';
 import { Pipeline } from '../pipeline/Pipeline';
-import { useConfigStore } from '../store/configStore';
 
 export default function LiveCountingScreen() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -100,7 +99,7 @@ export default function LiveCountingScreen() {
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 2;
         result.boxes.forEach(b => {
-          ctx.strokeRect(b.bbox.x * w, b.bbox.y * h, b.bbox.w * w, b.bbox.h * h);
+          ctx.strokeRect(b.x * w, b.y * h, b.w * w, b.h * h);
         });
 
         // Draw Tracks

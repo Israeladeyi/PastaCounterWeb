@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, Square, RefreshCw, Activity, Clock, Target } from 'lucide-react';
+import { Play, Square, RefreshCw, Activity, Clock, Target, CameraOff } from 'lucide-react';
 import { Pipeline } from '../pipeline/Pipeline';
 import { useConfigStore } from '../store/configStore';
 
@@ -25,27 +25,41 @@ export default function LiveCountingScreen() {
   }, [countingLine, session.durationMs]);
 
   useEffect(() => {
-    // 1. Start Webcam
-    navigator.mediaDevices.getUserMedia({ 
-      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'environment' } 
-    })
-    .then(stream => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+    let stream: MediaStream | null = null;
+
+    if (isCounting) {
+      // Start Webcam
+      navigator.mediaDevices.getUserMedia({ 
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'environment' } 
+      })
+      .then(s => {
+        stream = s;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      })
+      .catch(err => {
+        console.error("Error accessing webcam:", err);
+        alert("Could not access webcam. Please ensure permissions are granted.");
+      });
+    } else {
+      // Stop Webcam
+      if (videoRef.current && videoRef.current.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+        videoRef.current.srcObject = null;
       }
-    })
-    .catch(err => {
-      console.error("Error accessing webcam:", err);
-      alert("Could not access webcam. Please ensure permissions are granted.");
-    });
+    }
 
     return () => {
-      if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
-      if (videoRef.current?.srcObject) {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+      }
+      if (videoRef.current && videoRef.current.srcObject) {
         (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+        videoRef.current.srcObject = null;
       }
     };
-  }, []);
+  }, [isCounting]);
 
   const processFrame = async () => {
     if (!isCounting || !videoRef.current || !extractionCanvasRef.current || !canvasRef.current) {
@@ -150,7 +164,12 @@ export default function LiveCountingScreen() {
       rAFRef.current = requestAnimationFrame(processFrame);
     } else {
       pipelineRef.current.getSessionManager().abort();
+      if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
     }
+    
+    return () => {
+      if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
+    };
   }, [isCounting]);
 
   const formatTime = (ms: number) => {
@@ -166,12 +185,20 @@ export default function LiveCountingScreen() {
       
       {/* Video Area */}
       <div className="video-wrapper">
+        {!isCounting && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0B0F19', zIndex: 5 }}>
+            <CameraOff size={64} color="var(--text-muted)" style={{ opacity: 0.5, marginBottom: 16 }} />
+            <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', fontWeight: 500 }}>Camera Disabled for Security</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', opacity: 0.7, marginTop: 8 }}>Click Start Counting to activate camera</p>
+          </div>
+        )}
         <video 
           ref={videoRef} 
           autoPlay 
           playsInline 
           muted 
           className="video-element"
+          style={{ opacity: isCounting ? 1 : 0, transition: 'opacity 0.3s' }}
         />
         <canvas 
           ref={canvasRef} 

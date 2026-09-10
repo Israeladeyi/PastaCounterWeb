@@ -143,7 +143,13 @@ export class MotionDetector implements ObjectDetector {
 
     for (const blob of blobs) {
       const blobArea = (blob.w / frameWidth) * (blob.h / frameHeight);
-      if (blobArea < this.config.minBlobArea || blobArea > this.config.maxBlobArea) continue;
+      
+      let className = 'pasta_sachet';
+      if (blobArea > this.config.maxBlobArea) {
+        className = 'too_close';
+      } else if (blobArea < this.config.minBlobArea) {
+        className = 'too_far';
+      }
 
       // Confidence: scale by blob size relative to expected sachet size
       // Larger blob (within range) = more confident
@@ -159,7 +165,7 @@ export class MotionDetector implements ObjectDetector {
         },
         confidence,
         classId: 0,
-        className: 'pasta_sachet',
+        className,
       });
     }
 

@@ -6,7 +6,7 @@ import { BoundingBox } from '../utils/geometry';
 import { Track } from '../tracking/Track';
 import { ConfidenceEngine } from '../confidence/ConfidenceEngine';
 
-import { CountingLine } from '../counting/CountingLine';
+import { CountingLine, CountingLineConfig } from '../counting/CountingLine';
 import { DuplicateGuard } from '../counting/DuplicateGuard';
 
 export interface FrameData {
@@ -21,12 +21,14 @@ export interface PipelineResult {
   tracks: Track[];
   count: number;
   systemConfidence: number;
+  warnings: string[];
 }
 
 export class Pipeline {
   private detector: MotionDetector;
   private tracker: ByteTracker;
   private engine: CountingEngine;
+  private countingLine: CountingLine;
   private sessionManager: SessionManager;
   private confidenceEngine: ConfidenceEngine;
 
@@ -40,10 +42,21 @@ export class Pipeline {
     this.sessionManager = new SessionManager();
     
     // Counting line positioned at 60% down the screen, expecting downward movement
+    this.countingLine = new CountingLine({ 
+      position: 0.6, 
+      orientation: 'HORIZONTAL', 
+      countDirection: 'T2B', 
+      zoneHalfWidth: 0.1 
+    });
     this.engine = new CountingEngine(
-      new CountingLine({ y: 0.6, countDirection: 'DOWN', margin: 0.1 }),
+      this.countingLine,
       new DuplicateGuard()
     );
+
+    // Route counting events into the session manager
+    this.engine.setEventListener((event) => {
+      this.sessionManager.onCountEvent(event);
+    });
 
     this.confidenceEngine = new ConfidenceEngine();
   }
@@ -59,8 +72,11 @@ export class Pipeline {
       // 1. Detection (Motion Subtraction)
       const detections = await this.detector.detect(frame.data as unknown as Uint8Array, frame.width, frame.height, frame.timestamp);
 
+      const validDetections = detections.filter(d => d.className === 'pasta_sachet');
+      const warnings = Array.from(new Set(detections.filter(d => d.className !== 'pasta_sachet').map(d => d.className)));
+
       // 2. Tracking (Kalman + ByteTrack)
-      const tracks = this.tracker.update(detections, frame.timestamp);
+      const tracks = this.tracker.update(validDetections, frame.timestamp);
 
       // 3. Counting Engine (Line crossing, state machine)
       this.engine.processTracks(tracks, frame.timestamp);
@@ -69,10 +85,11 @@ export class Pipeline {
       const health = this.confidenceEngine.assessSystemHealth(tracks);
 
       return {
-        boxes: detections.map(d => d.bbox),
+        boxes: validDetections.map(d => d.bbox),
         tracks: tracks,
         count: this.sessionManager.getSnapshot().confirmedCount,
-        systemConfidence: health.overall
+        systemConfidence: health.overall,
+        warnings
       };
     } finally {
       this.isProcessing = false;
@@ -83,6 +100,11 @@ export class Pipeline {
     this.tracker = new ByteTracker();
     this.detector.resetBackground();
     this.engine.reset();
+  }
+
+  public updateConfig(lineConfig: CountingLineConfig, sessionDurationMs: number) {
+    this.countingLine.updateConfig(lineConfig);
+    this.sessionManager.updateConfig({ durationMs: sessionDurationMs });
   }
 
   public getSessionManager() {

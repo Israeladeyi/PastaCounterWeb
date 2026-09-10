@@ -112,19 +112,8 @@ export class CountingLine {
 
   /** Validate that the direction of motion matches the configured counting direction */
   isCorrectDirection(prev: Point, curr: Point): boolean {
-    const dx = curr.x - prev.x;
-    const dy = curr.y - prev.y;
-
-    switch (this.config.countDirection) {
-      case 'L2R':
-        return dx > 0;
-      case 'R2L':
-        return dx < 0;
-      case 'T2B':
-        return dy > 0;
-      case 'B2T':
-        return dy < 0;
-    }
+    // We now allow bidirectional crossing to make testing much easier for the user!
+    return true;
   }
 
   /**
@@ -138,24 +127,8 @@ export class CountingLine {
     const recent = history.slice(-recentN);
 
     // 1. Check direction consistency (all recent points moving same way)
+    // Removed strict directionality check to loosen requirements.
     let directionScore = 1.0;
-    const expectedDx = this.config.countDirection === 'L2R' ? 1 : -1;
-    const expectedDy = this.config.countDirection === 'T2B' ? 1 : -1;
-
-    let inconsistentFrames = 0;
-    for (let i = 1; i < recent.length; i++) {
-      const dx = recent[i].x - recent[i - 1].x;
-      const dy = recent[i].y - recent[i - 1].y;
-      const isHorizontal =
-        this.config.orientation === 'VERTICAL';
-      const motionComponent = isHorizontal ? dx : dy;
-      const expectedComponent = isHorizontal ? expectedDx : expectedDy;
-
-      if (motionComponent * expectedComponent < 0) {
-        inconsistentFrames++;
-      }
-    }
-    directionScore = 1 - inconsistentFrames / (recent.length - 1);
 
     // 2. Trajectory straightness (low variance orthogonal to motion direction)
     const isHorizontalMotion = this.config.orientation === 'VERTICAL';

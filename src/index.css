@@ -296,3 +296,46 @@ h1, h2, h3, .display-font {
 .session-item:hover {
   background: rgba(255,255,255,0.08);
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .live-container {
+    flex-direction: column;
+    height: auto;
+    padding: 16px;
+  }
+  
+  .video-wrapper {
+    min-height: 300px;
+  }
+  
+  .data-panel {
+    width: 100%;
+  }
+
+  .top-nav {
+    padding: 0 16px;
+  }
+  
+  .nav-brand {
+    font-size: 1.2rem;
+  }
+  
+  .nav-links {
+    gap: 10px;
+  }
+  
+  .nav-link {
+    font-size: 0.9rem;
+  }
+
+  .count-number {
+    font-size: 4rem;
+  }
+}
+
+@keyframes pulse {
+  0% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.05); }
+  100% { transform: translateX(-50%) scale(1); }
+}

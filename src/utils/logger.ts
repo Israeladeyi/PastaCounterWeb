@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 /**
  * logger.ts — Structured, levelled logger with buffer support
  */

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Square, RefreshCw } from 'lucide-react';
 import { Pipeline } from '../pipeline/Pipeline';
+import { useConfigStore } from '../store/configStore';
 
 export default function LiveCountingScreen() {
+  const { session, countingLine } = useConfigStore();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const extractionCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -10,10 +12,17 @@ export default function LiveCountingScreen() {
   const [isCounting, setIsCounting] = useState(false);
   const [count, setCount] = useState(0);
   const [confidence, setConfidence] = useState(1.0);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [activeWarning, setActiveWarning] = useState<string | null>(null);
   
   // Create pipeline instance (one per screen mount)
   const pipelineRef = useRef(new Pipeline());
   const rAFRef = useRef<number>();
+
+  // Sync config
+  useEffect(() => {
+    pipelineRef.current.updateConfig(countingLine, session.durationMs);
+  }, [countingLine, session.durationMs]);
 
   useEffect(() => {
     // 1. Start Webcam
@@ -80,6 +89,14 @@ export default function LiveCountingScreen() {
     if (result) {
       setCount(result.count);
       setConfidence(result.systemConfidence);
+      setTimeRemaining(pipelineRef.current.getSessionManager().getSnapshot().remainingMs);
+      
+      if (result.warnings && result.warnings.length > 0) {
+        if (result.warnings.includes('too_close')) setActiveWarning('Camera is too close!');
+        else if (result.warnings.includes('too_far')) setActiveWarning('Camera is too far!');
+      } else {
+        setActiveWarning(null);
+      }
       
       // Draw overlays
       const ctx = canvasRef.current.getContext('2d');
@@ -87,12 +104,18 @@ export default function LiveCountingScreen() {
         ctx.clearRect(0, 0, w, h);
         
         // Draw Line
-        const lineY = h * 0.6; // 60% down
+        const isHorizontal = countingLine.orientation === 'HORIZONTAL';
+        const linePos = isHorizontal ? h * countingLine.position : w * countingLine.position;
         ctx.strokeStyle = '#ef4444';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(0, lineY);
-        ctx.lineTo(w, lineY);
+        if (isHorizontal) {
+          ctx.moveTo(0, linePos);
+          ctx.lineTo(w, linePos);
+        } else {
+          ctx.moveTo(linePos, 0);
+          ctx.lineTo(linePos, h);
+        }
         ctx.stroke();
 
         // Draw Bounding Boxes
@@ -130,6 +153,13 @@ export default function LiveCountingScreen() {
     }
   }, [isCounting]);
 
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.ceil(ms / 1000);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="live-container">
       {/* Video / Canvas Area */}
@@ -148,6 +178,25 @@ export default function LiveCountingScreen() {
         {/* Hidden canvas for pixel extraction */}
         <canvas ref={extractionCanvasRef} style={{ display: 'none' }} />
         
+        {activeWarning && (
+          <div style={{
+            position: 'absolute',
+            top: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'var(--danger)',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: 8,
+            fontWeight: 'bold',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+            zIndex: 10,
+            animation: 'pulse 2s infinite'
+          }}>
+            ⚠️ {activeWarning}
+          </div>
+        )}
+
         {isCounting && (
           <div style={{ position: 'absolute', top: 20, right: 20, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: 20 }}>
             <div className="recording-indicator" />
@@ -174,6 +223,12 @@ export default function LiveCountingScreen() {
             <div className="stat-card">
               <div className="stat-label">Rate (ppm)</div>
               <div className="stat-value">{pipelineRef.current.getSessionManager().getSnapshot().ratePerMin.toFixed(1)}</div>
+            </div>
+            <div className="stat-card" style={{ gridColumn: 'span 2' }}>
+              <div className="stat-label">Time Remaining</div>
+              <div className="stat-value" style={{ fontFamily: 'monospace', fontSize: '2rem', textAlign: 'center' }}>
+                {formatTime(timeRemaining || session.durationMs)}
+              </div>
             </div>
           </div>
         </div>

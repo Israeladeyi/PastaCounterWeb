@@ -7,7 +7,6 @@ export default function LiveCountingScreen() {
   const { session, countingLine } = useConfigStore();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const extractionCanvasRef = useRef<HTMLCanvasElement>(null);
   
   const [isCounting, setIsCounting] = useState(false);
   const [count, setCount] = useState(0);
@@ -62,7 +61,7 @@ export default function LiveCountingScreen() {
   }, [isCounting]);
 
   const processFrame = async () => {
-    if (!isCounting || !videoRef.current || !extractionCanvasRef.current || !canvasRef.current) {
+    if (!isCounting || !videoRef.current || !canvasRef.current) {
       rAFRef.current = requestAnimationFrame(processFrame);
       return;
     }
@@ -74,29 +73,18 @@ export default function LiveCountingScreen() {
     }
 
     // Ensure canvas matches video dimensions
-    if (extractionCanvasRef.current.width !== video.videoWidth) {
-      extractionCanvasRef.current.width = video.videoWidth;
-      extractionCanvasRef.current.height = video.videoHeight;
+    if (canvasRef.current.width !== video.videoWidth) {
       canvasRef.current.width = video.videoWidth;
       canvasRef.current.height = video.videoHeight;
     }
 
     const w = video.videoWidth;
     const h = video.videoHeight;
-
-    // Extract frame
-    const ctxEx = extractionCanvasRef.current.getContext('2d', { willReadFrequently: true });
-    if (!ctxEx) return;
-    
-    // Draw video to hidden canvas
-    ctxEx.drawImage(video, 0, 0, w, h);
-    const imageData = ctxEx.getImageData(0, 0, w, h);
-
     // Process through pipeline
     const result = await pipelineRef.current.processFrame({
       width: w,
       height: h,
-      data: imageData.data,
+      videoElement: video,
       timestamp: performance.now()
     });
 
@@ -135,8 +123,13 @@ export default function LiveCountingScreen() {
         // Draw Bounding Boxes
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 2;
+        ctx.font = 'bold 14px Inter';
         result.boxes.forEach(b => {
           ctx.strokeRect(b.x * w, b.y * h, b.w * w, b.h * h);
+          if (b.label) {
+            ctx.fillStyle = '#10b981';
+            ctx.fillText(b.label.toUpperCase(), b.x * w, (b.y * h) - 5);
+          }
         });
 
         // Draw Tracks
@@ -204,7 +197,6 @@ export default function LiveCountingScreen() {
           ref={canvasRef} 
           className="overlay-canvas"
         />
-        <canvas ref={extractionCanvasRef} style={{ display: 'none' }} />
         
         {/* Top Left Stats Overlay */}
         <div className="live-stats-overlay">

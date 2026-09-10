@@ -1,4 +1,4 @@
-import { MotionDetector } from '../detection/MotionDetector';
+import { TensorflowDetector } from '../detection/TensorflowDetector';
 import { ByteTracker } from '../tracking/ByteTracker';
 import { CountingEngine } from '../counting/CountingEngine';
 import { SessionManager } from '../session/SessionManager';
@@ -12,7 +12,8 @@ import { DuplicateGuard } from '../counting/DuplicateGuard';
 export interface FrameData {
   width: number;
   height: number;
-  data: Uint8ClampedArray;
+  data?: Uint8ClampedArray; // Kept for backwards compatibility if needed
+  videoElement: HTMLVideoElement;
   timestamp: number;
 }
 
@@ -25,7 +26,7 @@ export interface PipelineResult {
 }
 
 export class Pipeline {
-  private detector: MotionDetector;
+  private detector: TensorflowDetector;
   private tracker: ByteTracker;
   private engine: CountingEngine;
   private countingLine: CountingLine;
@@ -36,7 +37,7 @@ export class Pipeline {
 
 
   constructor() {
-    this.detector = new MotionDetector();
+    this.detector = new TensorflowDetector();
     this.tracker = new ByteTracker();
     
     this.sessionManager = new SessionManager();
@@ -66,11 +67,15 @@ export class Pipeline {
     this.isProcessing = true;
 
     try {
-      // 1. Detection (Motion Subtraction)
-      const detections = await this.detector.detect(frame.data as unknown as Uint8Array, frame.width, frame.height, frame.timestamp);
+      // 1. Detection (Tensorflow COCO-SSD)
+      const detections = await this.detector.detect(frame.videoElement, frame.timestamp);
 
-      const validDetections = detections.filter(d => d.className === 'pasta_sachet');
-      const warnings = Array.from(new Set(detections.filter(d => d.className !== 'pasta_sachet').map(d => d.className)));
+      // In the new TF model, we accept any object that is detected to be counted.
+      // E.g., if it detects a "cell phone" (often confused for a pen) or "bottle".
+      const validDetections = detections; 
+      
+      // We don't have hardcoded proximity warnings in TF right now, but we can infer them from bounding box size if needed later.
+      const warnings: string[] = [];
 
       // 2. Tracking (Kalman + ByteTrack)
       const tracks = this.tracker.update(validDetections, frame.timestamp);
@@ -82,7 +87,10 @@ export class Pipeline {
       const health = this.confidenceEngine.assessSystemHealth(tracks);
 
       return {
-        boxes: validDetections.map(d => d.bbox),
+        boxes: validDetections.map(d => {
+          // We will inject the class name into the track so it can be rendered
+          return { ...d.bbox, label: d.className };
+        }),
         tracks: tracks,
         count: this.sessionManager.getSnapshot().confirmedCount,
         systemConfidence: health.overall,

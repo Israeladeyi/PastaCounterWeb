@@ -12,6 +12,7 @@ export interface BoundingBox {
   y: number; // top edge
   w: number; // width
   h: number; // height
+  label?: string; // object class name
 }
 
 /** Normalized 2D point */

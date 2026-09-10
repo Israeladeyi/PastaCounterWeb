@@ -173,9 +173,11 @@ export class CountingEngine {
       }
     }
 
-    // --- Crossing detection ---
+    // --- Crossing detection (Relaxed for fast-moving/low-framerate objects) ---
     if (
-      track.state === TrackState.APPROACHING &&
+      (track.state === TrackState.CONFIRMED ||
+       track.state === TrackState.TRACKING ||
+       track.state === TrackState.APPROACHING) &&
       track.history.length >= 2
     ) {
       const prev = track.history[track.history.length - 2];
@@ -186,13 +188,8 @@ export class CountingEngine {
       if (crossed) {
         track.crossingDetected = true;
 
-        // Transition to CROSSED
-        const crossResult = trackStateMachine.transition(
-          track.state,
-          TrackState.CROSSED,
-        );
-        if (!crossResult) return;
-        track.state = crossResult.newState;
+        // Force transition to CROSSED regardless of previous state (to handle tunneling)
+        track.state = TrackState.CROSSED;
 
         // Validate direction
         const correctDirection = this.countingLine.isCorrectDirection(
@@ -339,15 +336,10 @@ export class CountingEngine {
       }
     }
 
-    // --- EXITED detection (counted + back in BEFORE or AFTER zone) ---
-    if (track.state === TrackState.COUNTED && zonePos !== 'IN_ZONE') {
-      const exitResult = trackStateMachine.transition(
-        track.state,
-        TrackState.EXITED,
-      );
-      if (exitResult) {
-        track.state = exitResult.newState;
-      }
+    // --- EXITED detection (counted + safely past the line) ---
+    if (track.state === TrackState.COUNTED) {
+      // Just mark it as EXITED so we don't process it anymore
+      track.state = TrackState.EXITED;
     }
   }
 
